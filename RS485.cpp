@@ -14,33 +14,53 @@
  */
  
 #include <RS485.h> 
+
+/* A reference list of RS485 instances */
+RS485 * instances[4];		// pointer to the instantiated	DSPI classes
+
+/**
+ * The main (global) interrupt	handler
+ * It ain't pretty, but using this as a macro should increase the performance tremendously
+ */
+#define IRQHANDLER(M) \
+	{ \
+		uint32_t status = MAP_UART_getEnabledInterruptStatus( EUSCI_A## M ##_BASE ); \
+		MAP_UART_clearInterruptFlag( EUSCI_A## M ##_BASE, status ); \
+		 \
+		/* Receive interrupt flag */ \
+		if (status & UCRXIFG) \
+		{ \
+			instances[M]->_handleReceive(); \
+		} \
+	}
   
 /**** ISR/IRQ Handles ****/
-//void EUSCIA0_IRQHandler( void ) 
-//{
-//	IRQHANDLER(0);
-//}
+void EUSCIA0_IRQHandler( void ) 
+{
+	IRQHANDLER(0);
+}
 
-// void EUSCIA1_IRQHandler( void ) 
-// {
-	// IRQHANDLER(1);
-// }
+void EUSCIA1_IRQHandler( void ) 
+{
+	IRQHANDLER(1);
+}
 
-// void EUSCIA2_IRQHandler( void ) 
-// {
-	// IRQHANDLER(2);
-// }
+void EUSCIA2_IRQHandler( void ) 
+{
+	IRQHANDLER(2);
+}
 
-// void EUSCIA3_IRQHandler( void ) 
-// {
-	// IRQHANDLER(3);
-// }
+void EUSCIA3_IRQHandler( void ) 
+{
+	IRQHANDLER(3);
+}
   
   
 /**** CONSTRUCTORS Default ****/
 RS485::RS485() 
 {	//MSP432 launchpad used EUSCI_A2_BASE as default 
 	this->module = EUSCI_A2_BASE;
+	instances[2] = this;
 }
 
 /**** CONSTRUCTORS User Defined****/
@@ -50,18 +70,22 @@ RS485::RS485(uint8_t mod)
 	{	   
 		case 0:
 			this->module = EUSCI_A0_BASE;
+			instances[0] = this;
 			break;
 
 		case 1:
 			this->module = EUSCI_A1_BASE;
+			instances[1] = this;
 			break;
 			
 		case 2:
 			this->module = EUSCI_A2_BASE;
+			instances[2] = this;
 			break;
 			
 		case 3:
 			this->module = EUSCI_A3_BASE;
+			instances[3] = this;
 			break;
 	}	
 }
@@ -71,6 +95,26 @@ RS485::~RS485()
 {
 	MAP_UART_disableModule(this->module);
 	MAP_UART_unregisterInterrupt(this->module);
+	
+		/* Deregister from the moduleMap */
+	switch (module) 
+	{
+		case EUSCI_A0_BASE:
+			instances[0] = 0;
+			break;
+			
+		case EUSCI_A1_BASE:
+			instances[1] = 0;
+			break;
+			
+		case EUSCI_A2_BASE:
+			instances[2] = 0;
+			
+			break;
+		case EUSCI_A3_BASE:
+			instances[3] = 0;
+			break;
+	}
 }
 
 /**** Begin RS485 ****/
@@ -109,6 +153,7 @@ void RS485::begin(unsigned int baudrate)
 		MAP_UART_initModule(this->module, &Config);	
 	
 	MAP_UART_enableModule(this->module);		// enable UART operation
+	MAP_UART_setDormant(this->module);			//address bit multi processor mode, only address will triggered RXIFG
 }
 
 /**** TX 
@@ -127,25 +172,62 @@ void RS485::transmit( uint_fast8_t address, uint8_t * TxBuffer, uint8_t TxBuffer
 	}
 }
 
-/**** RX 
  * Parameter:
  * uint_fast8_t address: receiver address
+ * Return:
+ * 1 - Pass
+ * 0 - Fail 
+ ****/
+uint8_t RS485::validateAddress( uint_fast8_t address)
+{		
+	if (MAP_UART_receiveData(this->module) == address)
+	{
+		MAP_UART_resetDormant(this->module);	//for data to be transferred to RXBUF
+		MAP_UART_disableInterrupt( this->module, EUSCI_A_UART_RECEIVE_INTERRUPT );
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+/**** RX 
+ * Parameter:
  * uint8_t * RxBuffer: Receive buffer pointer
  * uint8_t RxBufferSize: Size of receive buffer
 ****/
-void RS485::receive( uint_fast8_t address, uint8_t * RxBuffer, uint8_t RxBufferSize)
+void RS485::receive(uint8_t * RxBuffer, uint8_t RxBufferSize)
 {	
-	MAP_UART_setDormant(this->module);
-	
-	if (MAP_UART_receiveData(this->module) == address)
-	{
-		MAP_UART_resetDormant(this->module);
-		
 		for (int index = 0; index < RxBufferSize; index++) 
 		{
 			RxBuffer[index] = MAP_UART_receiveData(this->module);
 		}
+	
+	MAP_UART_setDormant(this->module);
+	MAP_UART_enableInterrupt( this->module, EUSCI_A_UART_RECEIVE_INTERRUPT );
+}
+
+/**** RX Interrupt Handler ****/
+void RS485::onReceive( void (*islHandle)(void) ) 
+{
+	user_onReceive = islHandle;	//parse handler function
+	
+	if ( islHandle )
+	{
+		uint32_t status = MAP_UART_getEnabledInterruptStatus(this->module);
+		
+		// clear the receive interrupt to avoid spurious triggers the first time
+		MAP_UART_clearInterruptFlag( this->module, status );
+		
+		// enable receive interrupt
+		MAP_UART_enableInterrupt( this->module, EUSCI_A_UART_RECEIVE_INTERRUPT );
 	}
+	else
+	{
+		// disable receive interrupt
+		MAP_UART_disableInterrupt( this->module, EUSCI_A_UART_RECEIVE_INTERRUPT );
+	}	
 }
 
 
@@ -162,7 +244,7 @@ void RS485::_initMain( void )
 		modulePins = EUSCI_A0_PINS;
 		
 		// transmit / receive interrupt request handler
-		// MAP_UART_registerInterrupt(this->module, EUSCIA0_IRQHandler);
+		MAP_UART_registerInterrupt(this->module, EUSCIA0_IRQHandler);
 		
 		break;
 		
@@ -172,7 +254,7 @@ void RS485::_initMain( void )
 		modulePins = EUSCI_A1_PINS;
 		
 		// transmit / receive interrupt request handler
-		// MAP_UART_registerInterrupt(this->module, EUSCIA1_IRQHandler);
+		MAP_UART_registerInterrupt(this->module, EUSCIA1_IRQHandler);
 		
 		break;
 		
@@ -182,7 +264,7 @@ void RS485::_initMain( void )
 		modulePins = EUSCI_A2_PINS;
 		
 		// transmit / receive interrupt request handler
-		// MAP_UART_registerInterrupt(this->module, EUSCIA2_IRQHandler);
+		MAP_UART_registerInterrupt(this->module, EUSCIA2_IRQHandler);
 		
 		break;
 		
@@ -192,9 +274,22 @@ void RS485::_initMain( void )
 		modulePins = EUSCI_A3_PINS;
 		
 		// transmit / receive interrupt request handler
-		// MAP_UART_registerInterrupt(this->module, EUSCIA3_IRQHandler);
+		MAP_UART_registerInterrupt(this->module, EUSCIA3_IRQHandler);
 		
 		break;		
 	}	
 	MAP_GPIO_setAsPeripheralModuleFunctionInputPin(modulePort, modulePins, GPIO_PRIMARY_MODULE_FUNCTION);
+}
+
+/**
+ * Internal process handling the rx, and calling the user's interrupt handles
+ */
+void RS485::_handleReceive() 
+{
+	// do something only if there is a handler registered
+	if (user_onReceive)
+	{
+		// call the user-defined data transfer handler
+		user_onReceive();
+	}
 }

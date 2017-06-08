@@ -30,14 +30,20 @@ private:
 	uint8_t modulePort;
 	uint16_t modulePins;
 	
+	/* Internal states */
+	void (*user_onReceive)( void );
+	
 	void _initMain( void ); 
+	
+	/* stub functions to handle interrupts */
+	void _handleReceive();
 	
 	/* Interrupt handlers: they are declared as friends to be accessible from outside 
 	the class (the interrupt engine) but have access to member functions */
-	//friend void EUSCIA0_IRQHandler( void );
-	//friend void EUSCIA1_IRQHandler( void );
-	//friend void EUSCIA2_IRQHandler( void );
-	//friend void EUSCIA3_IRQHandler( void );
+	friend void EUSCIA0_IRQHandler( void );
+	friend void EUSCIA1_IRQHandler( void );
+	friend void EUSCIA2_IRQHandler( void );
+	friend void EUSCIA3_IRQHandler( void );
 
 public:
 	RS485();
@@ -46,8 +52,9 @@ public:
 	
 	void begin(unsigned int baudrate);
 	void transmit( uint_fast8_t address, uint8_t * TxBuffer, uint8_t TxBufferSize);
-	void receive( uint_fast8_t address, uint8_t * RxBuffer, uint8_t RxBufferSize);
-	
+	uint8_t validateAddress( uint_fast8_t address);
+	void receive(uint8_t * RxBuffer, uint8_t RxBufferSize);
+	void onReceive( void (*islHandle)(void) );
 
 protected:
 

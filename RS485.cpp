@@ -172,6 +172,7 @@ void RS485::transmit( uint_fast8_t address, uint8_t * TxBuffer, uint8_t TxBuffer
 	}
 }
 
+/**** Function to validate received address 
  * Parameter:
  * uint_fast8_t address: receiver address
  * Return:

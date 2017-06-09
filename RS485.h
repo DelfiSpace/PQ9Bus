@@ -17,6 +17,7 @@
 #define RS485_H
 
 #include <driverlib.h>
+#include <CRC16CCITT.h>
 
 /* Device specific includes */
 #include <inc/rs485_msp432p401r.h>
@@ -24,6 +25,9 @@
 
 class RS485
 {
+protected:
+	CRC16CCITT &crc;
+	
 private: 
 	/* MSP specific modules */
 	uint32_t module;
@@ -46,18 +50,16 @@ private:
 	friend void EUSCIA3_IRQHandler( void );
 
 public:
-	RS485();
-	RS485(uint8_t mod);
+	RS485(CRC16CCITT &val);
+	RS485(CRC16CCITT &val, uint8_t mod);
 	~RS485();
 	
 	void begin(unsigned int baudrate);
 	void transmit( uint_fast8_t address, uint8_t * TxBuffer, uint8_t TxBufferSize);
 	uint8_t validateAddress( uint_fast8_t address);
-	void receive(uint8_t * RxBuffer, uint8_t RxBufferSize);
+	uint8_t receive(uint8_t * RxBuffer, uint8_t RxBufferSize);
 	void onReceive( void (*islHandle)(void) );
-
-protected:
-
+	uint16_t softwareCRC (uint16_t crc1, uint8_t data, uint16_t poly);
 };
 
 #endif	/* RS485_H_ */

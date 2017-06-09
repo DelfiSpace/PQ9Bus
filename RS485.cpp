@@ -57,14 +57,14 @@ void EUSCIA3_IRQHandler( void )
   
   
 /**** CONSTRUCTORS Default ****/
-RS485::RS485() 
+RS485::RS485(CRC16CCITT &val): crc(val) 
 {	//MSP432 launchpad used EUSCI_A2_BASE as default 
 	this->module = EUSCI_A2_BASE;
 	instances[2] = this;
 }
 
 /**** CONSTRUCTORS User Defined****/
-RS485::RS485(uint8_t mod)
+RS485::RS485(CRC16CCITT &val, uint8_t mod): crc(val) 
 {
 	 switch (mod) 
 	{	   
@@ -197,16 +197,45 @@ uint8_t RS485::validateAddress( uint_fast8_t address)
  * Parameter:
  * uint8_t * RxBuffer: Receive buffer pointer
  * uint8_t RxBufferSize: Size of receive buffer
+ * Return:
+ * uint8_t 1:CRC passed, data is moved in to RxBuffer
+ * 		   0:CRC failed
 ****/
-void RS485::receive(uint8_t * RxBuffer, uint8_t RxBufferSize)
+uint8_t RS485::receive(uint8_t * RxBuffer, uint8_t RxBufferSize)
 {	
-		for (int index = 0; index < RxBufferSize; index++) 
-		{
-			RxBuffer[index] = MAP_UART_receiveData(this->module);
-		}
+	uint8_t temp[RxBufferSize];
+	uint16_t val = 0xFFFF;
+	crc.init();
 	
-	MAP_UART_setDormant(this->module);
-	MAP_UART_enableInterrupt( this->module, EUSCI_A_UART_RECEIVE_INTERRUPT );
+	for (int index = 0; index < RxBufferSize; index++) 
+	{
+		temp[index] = MAP_UART_receiveData(this->module);
+	}
+		
+	//CRC check
+	for (int index = 0; index < RxBufferSize; index++)
+	{
+		crc.newChar(temp[index]);
+		val = softwareCRC(val, temp[index], 0x1021);
+	}
+	
+	if (val == crc.getCRC())
+	{	
+		for (int index = 0; index < RxBufferSize; index++)
+		{
+			RxBuffer[index] = temp[index];
+		}
+		
+		MAP_UART_setDormant(this->module);
+		MAP_UART_enableInterrupt( this->module, EUSCI_A_UART_RECEIVE_INTERRUPT );
+		return 1;
+	}
+	else
+	{
+		MAP_UART_setDormant(this->module);
+		MAP_UART_enableInterrupt( this->module, EUSCI_A_UART_RECEIVE_INTERRUPT );
+		return 0;
+	}
 }
 
 /**** RX Interrupt Handler ****/
@@ -229,6 +258,25 @@ void RS485::onReceive( void (*islHandle)(void) )
 		// disable receive interrupt
 		MAP_UART_disableInterrupt( this->module, EUSCI_A_UART_RECEIVE_INTERRUPT );
 	}	
+}
+
+/**** CRC calculator ****/
+uint16_t RS485::softwareCRC (uint16_t crc1, uint8_t data, uint16_t poly)
+{
+  for (unsigned char i = 0; i < 8; i++)
+  {
+    if (((( crc1 & 0x8000) >> 8) ^ (data & 0x80)) != 0)
+    {
+      crc1 <<= 1;
+      crc1 ^= poly;
+    }
+    else
+    {
+      crc1 <<= 1;
+    }
+    data <<= 1;
+  }
+  return crc1;
 }
 
 

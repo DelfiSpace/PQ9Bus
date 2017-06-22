@@ -15,8 +15,8 @@
  
 #include <RS485.h> 
 
-/* A reference list of RS485 instances */
-RS485 * instances[4];		// pointer to the instantiated	DSPI classes
+/* A reference list of RS485 RS485_instancess */
+RS485 * RS485_instancess[4];		// pointer to the instantiated	RS485 classes
 
 /**
  * The main (global) interrupt	handler
@@ -30,7 +30,7 @@ RS485 * instances[4];		// pointer to the instantiated	DSPI classes
 		/* Receive interrupt flag */ \
 		if (status & UCRXIFG) \
 		{ \
-			instances[M]->_handleReceive(); \
+			RS485_instancess[M]->_handleReceive(); \
 		} \
 	}
   
@@ -60,7 +60,7 @@ void EUSCIA3_IRQHandler( void )
 RS485::RS485(CRC16CCITT &val): crc(val) 
 {	//MSP432 launchpad used EUSCI_A2_BASE as default 
 	this->module = EUSCI_A2_BASE;
-	instances[2] = this;
+	RS485_instancess[2] = this;
 }
 
 /**** CONSTRUCTORS User Defined****/
@@ -70,22 +70,22 @@ RS485::RS485(CRC16CCITT &val, uint8_t mod): crc(val)
 	{	   
 		case 0:
 			this->module = EUSCI_A0_BASE;
-			instances[0] = this;
+			RS485_instancess[0] = this;
 			break;
 
 		case 1:
 			this->module = EUSCI_A1_BASE;
-			instances[1] = this;
+			RS485_instancess[1] = this;
 			break;
 			
 		case 2:
 			this->module = EUSCI_A2_BASE;
-			instances[2] = this;
+			RS485_instancess[2] = this;
 			break;
 			
 		case 3:
 			this->module = EUSCI_A3_BASE;
-			instances[3] = this;
+			RS485_instancess[3] = this;
 			break;
 	}	
 }
@@ -100,19 +100,19 @@ RS485::~RS485()
 	switch (module) 
 	{
 		case EUSCI_A0_BASE:
-			instances[0] = 0;
+			RS485_instancess[0] = 0;
 			break;
 			
 		case EUSCI_A1_BASE:
-			instances[1] = 0;
+			RS485_instancess[1] = 0;
 			break;
 			
 		case EUSCI_A2_BASE:
-			instances[2] = 0;
+			RS485_instancess[2] = 0;
 			
 			break;
 		case EUSCI_A3_BASE:
-			instances[3] = 0;
+			RS485_instancess[3] = 0;
 			break;
 	}
 }

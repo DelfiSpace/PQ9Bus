@@ -178,8 +178,8 @@ void RS485::transmit( uint_fast8_t address, uint8_t * TxBuffer, uint8_t TxBuffer
 	}
 	
 	unsigned short computedCRC = crc.getCRC();
-	MAP_UART_transmitData(this->module, (*((unsigned char*)  &(computedCRC)+1)) );
 	MAP_UART_transmitData(this->module, (*((unsigned char*)  &(computedCRC)+0)) );
+	MAP_UART_transmitData(this->module, (*((unsigned char*)  &(computedCRC)+1)) );
 }
 
 /**** Function to validate received address 

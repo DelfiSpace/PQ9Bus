@@ -164,12 +164,22 @@ void RS485::begin(unsigned int baudrate)
 ****/
 void RS485::transmit( uint_fast8_t address, uint8_t * TxBuffer, uint8_t TxBufferSize)
 {
+	crc.init();
 	MAP_UART_transmitAddress(this->module, address);
+	crc.newChar(address);
+	
+	MAP_UART_transmitData(this->module, TxBufferSize);
+	crc.newChar(address);
 	
 	for (int index = 0; index < TxBufferSize; index++) 
 	{
 		MAP_UART_transmitData(this->module, TxBuffer[index]);
+		crc.newChar(TxBuffer[index]);
 	}
+	
+	unsigned short computedCRC = crc.getCRC();
+	MAP_UART_transmitData(this->module, (*((unsigned char*)  &(computedCRC)+1)) );
+	MAP_UART_transmitData(this->module, (*((unsigned char*)  &(computedCRC)+0)) );
 }
 
 /**** Function to validate received address 

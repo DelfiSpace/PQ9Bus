@@ -169,7 +169,7 @@ void RS485::transmit( uint_fast8_t address, uint8_t * TxBuffer, uint8_t TxBuffer
 	crc.newChar(address);
 	
 	MAP_UART_transmitData(this->module, TxBufferSize);
-	crc.newChar(address);
+	crc.newChar(TxBufferSize);
 	
 	for (int index = 0; index < TxBufferSize; index++) 
 	{

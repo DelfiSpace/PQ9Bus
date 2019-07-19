@@ -2,7 +2,7 @@
  * Code written by Chia Jiun Wei @ 22 May 2017
  * <J.W.Chia@tudelft.nl>
  *
- * RS485: a library to provide full hardware-driven RS485 functionality
+ * PQ9Bus: a library to provide full hardware-driven PQ9Bus functionality
  * to the TI MSP432 family of microcontrollers. It is possible to use
  * this library in Energia (the Arduino port for MSP microcontrollers)
  * or in other toolchains.
@@ -13,35 +13,48 @@
  *
  */
 
-#ifndef RS485_H
-#define RS485_H
+#ifndef PQ9Bus_H
+#define PQ9Bus_H
 
 #include <driverlib.h>
-#include <CRC16CCITT.h>
+#include "CRC16CCITT.h"
 
 /* Device specific includes */
 #include <inc/msp432p401r.h>
 
+enum InternalState { WaitForAddress, Size, Source, PayloadByte, CRC };
 
-class RS485
+class PQ9Bus
 {
 protected:
-	CRC16CCITT &crc;
 	
+
 private: 
 	/* MSP specific modules */
 	uint32_t module;
+	CRC16CCITT crc;
+	unsigned long TXEnablePort;
+	unsigned long TXEnablePin;
 	uint8_t modulePort;
+	uint8_t address;
+	uint8_t frameSize;
+	uint8_t frameSizeCounter;
 	uint16_t modulePins;
+	unsigned int baudrate;
+	unsigned char status;
+	InternalState state;
+	unsigned char buffer[261];
 	
 	/* Internal states */
-	void (*user_onReceive)( void );
+	void (*user_onReceive)( unsigned char * );
 	
 	void _initMain( void ); 
 	
 	/* stub functions to handle interrupts */
-	void _handleReceive();
+	void _handleReceive( unsigned char * );
 	
+    uint16_t softwareCRC ( uint16_t crc1, uint8_t data, uint16_t poly );
+
 	/* Interrupt handlers: they are declared as friends to be accessible from outside 
 	the class (the interrupt engine) but have access to member functions */
 	friend void EUSCIA0_IRQHandler( void );
@@ -50,16 +63,12 @@ private:
 	friend void EUSCIA3_IRQHandler( void );
 
 public:
-	RS485(CRC16CCITT &val);
-	RS485(CRC16CCITT &val, uint8_t mod);
-	~RS485();
+	PQ9Bus(uint8_t mod, unsigned long port, unsigned long pin);
+	~PQ9Bus();
 	
-	void begin(unsigned int baudrate);
-	void transmit( uint_fast8_t address, uint8_t * TxBuffer, uint8_t TxBufferSize);
-	uint8_t validateAddress( uint_fast8_t address);
-	uint8_t receive(uint8_t * RxBuffer, uint8_t RxBufferSize);
-	void onReceive( void (*islHandle)(void) );
-	uint16_t softwareCRC (uint16_t crc1, uint8_t data, uint16_t poly);
+	void begin(unsigned int baudrate, uint8_t address);
+	void transmit( uint_fast8_t destination, uint_fast8_t source, uint8_t * TxBuffer, uint8_t TxBufferSize);
+	void onReceive( void (*islHandle)( unsigned char * ) );
 };
 
-#endif	/* RS485_H_ */
+#endif	/* PQ9Bus_H_ */

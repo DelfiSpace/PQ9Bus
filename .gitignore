@@ -1,6 +1,2 @@
-*.d
-*.obj
-*.out
-*.lib
-*.mk
-*.opt
+/Release/
+/Debug/

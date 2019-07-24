@@ -18,6 +18,7 @@
 
 #include <driverlib.h>
 #include "CRC16CCITT.h"
+#include "PQ9Frame.h"
 
 /* Device specific includes */
 #include <inc/msp432p401r.h>
@@ -37,21 +38,21 @@ private:
 	unsigned long TXEnablePin;
 	uint8_t modulePort;
 	uint8_t address;
-	uint8_t frameSize;
 	uint8_t frameSizeCounter;
 	uint16_t modulePins;
 	unsigned int baudrate;
 	unsigned char status;
 	InternalState state;
-	unsigned char buffer[261];
+    PQ9Frame rxFrame;
+    unsigned char rxCRC1;
 	
 	/* Internal states */
-	void (*user_onReceive)( unsigned char * );
+	void (*user_onReceive)( PQ9Frame & );
 	
 	void _initMain( void ); 
 	
 	/* stub functions to handle interrupts */
-	void _handleReceive( unsigned char * );
+	void _handleReceive( PQ9Frame &newFrame );
 	
     uint16_t softwareCRC ( uint16_t crc1, uint8_t data, uint16_t poly );
 
@@ -67,8 +68,8 @@ public:
 	~PQ9Bus();
 	
 	void begin(unsigned int baudrate, uint8_t address);
-	void transmit( uint_fast8_t destination, uint_fast8_t source, uint8_t * TxBuffer, uint8_t TxBufferSize);
-	void onReceive( void (*islHandle)( unsigned char * ) );
+	void transmit( PQ9Frame &frame );
+	void setReceiveHandler( void (*islHandle)( PQ9Frame & ) );
 };
 
 #endif	/* PQ9Bus_H_ */

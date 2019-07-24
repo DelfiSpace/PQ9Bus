@@ -38,9 +38,9 @@ PQ9Bus * PQ9Bus_instances[4];		// pointer to the instantiated	PQ9Bus classes
                     /* Received the correct address */ \
                     /* Enable UART */ \
                     MAP_UART_resetDormant(EUSCI_A## M ##_BASE); \
-                    PQ9Bus_instances[M]->buffer[0] = PQ9Bus_instances[M]->address; \
+                    PQ9Bus_instances[M]->rxFrame.setDestination( PQ9Bus_instances[M]->address ); \
                     PQ9Bus_instances[M]->crc.init(); \
-                    PQ9Bus_instances[M]->crc.newChar(PQ9Bus_instances[M]->buffer[0]); \
+                    PQ9Bus_instances[M]->crc.newChar( PQ9Bus_instances[M]->rxFrame.getDestination() ); \
                     /* change state */ \
                     PQ9Bus_instances[M]->state = Size; \
                 } \
@@ -48,31 +48,30 @@ PQ9Bus * PQ9Bus_instances[4];		// pointer to the instantiated	PQ9Bus classes
             else if (PQ9Bus_instances[M]->state == Size) \
             { \
                 /* Received the frame size */ \
-                PQ9Bus_instances[M]->buffer[1] = MAP_UART_receiveData(EUSCI_A## M ##_BASE); \
-                PQ9Bus_instances[M]->crc.newChar(PQ9Bus_instances[M]->buffer[1]); \
-                PQ9Bus_instances[M]->frameSize = PQ9Bus_instances[M]->buffer[1]; \
+                PQ9Bus_instances[M]->rxFrame.setPayloadSize( MAP_UART_receiveData(EUSCI_A## M ##_BASE) ); \
+                PQ9Bus_instances[M]->crc.newChar( PQ9Bus_instances[M]->rxFrame.getPayloadSize() ); \
                 PQ9Bus_instances[M]->frameSizeCounter = 0; \
                 PQ9Bus_instances[M]->state = Source; \
             } \
             else if (PQ9Bus_instances[M]->state == Source) \
             { \
                 /* Received the frame source */ \
-                PQ9Bus_instances[M]->buffer[2] = MAP_UART_receiveData(EUSCI_A## M ##_BASE); \
-                PQ9Bus_instances[M]->crc.newChar(PQ9Bus_instances[M]->buffer[2]); \
+                PQ9Bus_instances[M]->rxFrame.setSource( MAP_UART_receiveData(EUSCI_A## M ##_BASE) ); \
+                PQ9Bus_instances[M]->crc.newChar( PQ9Bus_instances[M]->rxFrame.getSource() ); \
                 PQ9Bus_instances[M]->state = PayloadByte; \
             } \
             else if (PQ9Bus_instances[M]->state == PayloadByte) \
             { \
                 /* Received the frame payload byte */ \
-                if (PQ9Bus_instances[M]->frameSizeCounter < PQ9Bus_instances[M]->frameSize) \
+                if (PQ9Bus_instances[M]->frameSizeCounter < PQ9Bus_instances[M]->rxFrame.getPayloadSize()) \
                 { \
-                    PQ9Bus_instances[M]->buffer[PQ9Bus_instances[M]->frameSizeCounter + 3] = MAP_UART_receiveData(EUSCI_A## M ##_BASE); \
-                    PQ9Bus_instances[M]->crc.newChar(PQ9Bus_instances[M]->buffer[PQ9Bus_instances[M]->frameSizeCounter + 3]); \
+                    PQ9Bus_instances[M]->rxFrame.getPayload()[PQ9Bus_instances[M]->frameSizeCounter] = MAP_UART_receiveData(EUSCI_A## M ##_BASE); \
+                    PQ9Bus_instances[M]->crc.newChar( PQ9Bus_instances[M]->rxFrame.getPayload()[PQ9Bus_instances[M]->frameSizeCounter] ); \
                     PQ9Bus_instances[M]->frameSizeCounter++; \
                 } \
-                else if (PQ9Bus_instances[M]->frameSizeCounter == PQ9Bus_instances[M]->frameSize) \
+                else if (PQ9Bus_instances[M]->frameSizeCounter == PQ9Bus_instances[M]->rxFrame.getPayloadSize()) \
                 { \
-                    PQ9Bus_instances[M]->buffer[PQ9Bus_instances[M]->frameSize + 3] = MAP_UART_receiveData(EUSCI_A## M ##_BASE); \
+                    PQ9Bus_instances[M]->rxCRC1 = MAP_UART_receiveData(EUSCI_A## M ##_BASE); \
                     PQ9Bus_instances[M]->state = CRC; \
                 } \
                 else \
@@ -85,16 +84,16 @@ PQ9Bus * PQ9Bus_instances[4];		// pointer to the instantiated	PQ9Bus classes
             { \
                 PQ9Bus_instances[M]->state = WaitForAddress; \
                 MAP_UART_setDormant(EUSCI_A## M ##_BASE); \
-                PQ9Bus_instances[M]->buffer[PQ9Bus_instances[M]->frameSize + 4] = MAP_UART_receiveData(EUSCI_A## M ##_BASE); \
+                unsigned char rxCRC2 = MAP_UART_receiveData(EUSCI_A## M ##_BASE); \
                 \
                 unsigned short computedCRC = PQ9Bus_instances[M]->crc.getCRC(); \
                 unsigned char crc1 = (unsigned char)((computedCRC >> 8) & 0xFF); \
                 unsigned char crc2 = (unsigned char)(computedCRC & 0xFF); \
                 \
-                if ((crc1 == PQ9Bus_instances[M]->buffer[PQ9Bus_instances[M]->frameSize + 3]) && \
-                    (crc2 == PQ9Bus_instances[M]->buffer[PQ9Bus_instances[M]->frameSize + 4])) \
+                if ((crc1 == PQ9Bus_instances[M]->rxCRC1) && \
+                    (crc2 == rxCRC2)) \
                 { \
-                    PQ9Bus_instances[M]->_handleReceive(PQ9Bus_instances[M]->buffer); \
+                    PQ9Bus_instances[M]->_handleReceive(PQ9Bus_instances[M]->rxFrame); \
                 } \
             } \
             else \
@@ -231,24 +230,24 @@ void PQ9Bus::begin(unsigned int baudrate, uint8_t address)
  * uint8_t * TxBuffer: Transmit buffer pointer
  * uint8_t TxBufferSize: Size of Transmit buffer
 ****/
-void PQ9Bus::transmit( uint_fast8_t destination, uint_fast8_t source, uint8_t * TxBuffer, uint8_t TxBufferSize)
+void PQ9Bus::transmit( PQ9Frame &frame )
 {
     MAP_GPIO_setOutputHighOnPin( TXEnablePort, TXEnablePin );
 
 	crc.init();
-	MAP_UART_transmitAddress(this->module, destination);
-	crc.newChar(destination);
+	MAP_UART_transmitAddress(this->module, frame.getDestination());
+	crc.newChar(frame.getDestination());
 	
-	MAP_UART_transmitData(this->module, TxBufferSize);
-	crc.newChar(TxBufferSize);
+	MAP_UART_transmitData(this->module, frame.getPayloadSize());
+	crc.newChar(frame.getPayloadSize());
 	
-	MAP_UART_transmitData(this->module, source);
-	crc.newChar(source);
+	MAP_UART_transmitData(this->module, frame.getSource());
+	crc.newChar(frame.getSource());
 
-	for (int index = 0; index < TxBufferSize; index++) 
+	for (int i = 0; i < frame.getPayloadSize(); i++)
 	{
-		MAP_UART_transmitData(this->module, TxBuffer[index]);
-		crc.newChar(TxBuffer[index]);
+		MAP_UART_transmitData(this->module, frame.getPayload()[i]);
+		crc.newChar(frame.getPayload()[i]);
 	}
 	
 	unsigned short computedCRC = crc.getCRC();
@@ -267,7 +266,7 @@ void PQ9Bus::transmit( uint_fast8_t destination, uint_fast8_t source, uint8_t * 
 }
 
 /**** RX Interrupt Handler ****/
-void PQ9Bus::onReceive( void (*islHandle)(unsigned char *) )
+void PQ9Bus::setReceiveHandler( void (*islHandle)(PQ9Frame &) )
 {
 	user_onReceive = islHandle;	//parse handler function
 	
@@ -368,12 +367,12 @@ void PQ9Bus::_initMain( void )
 /**
  * Internal process handling the rx, and calling the user's interrupt handles
  */
-void PQ9Bus::_handleReceive(uint8_t *buffer)
+void PQ9Bus::_handleReceive(PQ9Frame &newFrame)
 {
 	// do something only if there is a handler registered
 	if (user_onReceive)
 	{
 	    // call the user-defined data transfer handler
-	    user_onReceive(buffer);
+	    user_onReceive(newFrame);
 	}
 }

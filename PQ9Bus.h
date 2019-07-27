@@ -70,6 +70,7 @@ public:
 	void begin(unsigned int baudrate, uint8_t address);
 	void transmit( PQ9Frame &frame );
 	void setReceiveHandler( void (*islHandle)( PQ9Frame & ) );
+	uint8_t getAddress( void );
 };
 
 #endif	/* PQ9Bus_H_ */

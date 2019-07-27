@@ -224,6 +224,11 @@ void PQ9Bus::begin(unsigned int baudrate, uint8_t address)
 	MAP_UART_setDormant(this->module);			//address bit multi processor mode, only address will triggered RXIFG
 }
 
+uint8_t PQ9Bus::getAddress()
+{
+    return address;
+}
+
 /**** TX 
  * Parameter:
  * uint_fast8_t address: receiver address

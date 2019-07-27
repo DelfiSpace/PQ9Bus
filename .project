@@ -3,6 +3,7 @@
 	<name>PQ9Bus</name>
 	<comment></comment>
 	<projects>
+		<project>DWire</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

@@ -12,9 +12,6 @@
 #ifndef PQ9FRAME_H_
 #define PQ9FRAME_H_
 
-#include "PQ9Frame.h"
-
-#define PQ9Frame()
 class PQ9Frame
 
 {

@@ -14,6 +14,7 @@
 #include "DSerial.h"
 
 #define PING_SERVICE            17
+#define PING_ERROR               0
 #define PING_REQUEST             1
 #define PING_RESPONSE            2
 

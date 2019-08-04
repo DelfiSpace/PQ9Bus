@@ -13,22 +13,26 @@ bool PingService::process(PQ9Frame &command, PQ9Bus &interface, PQ9Frame &workin
     if (command.getPayload()[0] == PING_SERVICE)
     {
         serial.println("PingService");
+
+        // prepare response frame
+        workingBuffer.setDestination(command.getSource());
+        workingBuffer.setSource(interface.getAddress());
+        workingBuffer.setPayloadSize(2);
+        workingBuffer.getPayload()[0] = PING_SERVICE;
+
         if (command.getPayload()[1] == PING_REQUEST)
         {
-            workingBuffer.setDestination(command.getSource());
-            workingBuffer.setSource(interface.getAddress());
-            workingBuffer.setPayloadSize(2);
-            workingBuffer.getPayload()[0] = PING_SERVICE;
+            // respond to ping
             workingBuffer.getPayload()[1] = PING_RESPONSE;
-            interface.transmit(workingBuffer);
         }
         else
         {
-            // TODO: how to handle this error?
-            serial.print("Unexpected Ping subtype (");
-            serial.print(command.getPayload()[1], DEC);
-            serial.println(")");
+            // unknown request
+            workingBuffer.getPayload()[1] = PING_ERROR;
         }
+
+        // send response
+        interface.transmit(workingBuffer);
         // command processed
         return true;
     }

@@ -21,7 +21,7 @@
 #include "PQ9Frame.h"
 
 /* Device specific includes */
-#include <inc/msp432p401r.h>
+#include "inc/msp432p401r.h"
 
 enum InternalState { WaitForAddress, Size, Source, PayloadByte, CRC };
 

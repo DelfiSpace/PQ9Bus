@@ -46,15 +46,23 @@ void PQ9CommandHandler::commandLoop()
             {
                 if (services[i]->process(rxBuffer, bus, txBuffer))
                 {
+                    // stop the loop if a service is found
                     found = true;
+                    break;
                 }
             }
 
             if (!found)
             {
-                serial.print("Unknown Command (");
+                serial.print("Unknown Service (");
                 serial.print(rxBuffer.getPayload()[0], DEC);
                 serial.println(")");
+                txBuffer.setDestination(rxBuffer.getSource());
+                txBuffer.setSource(bus.getAddress());
+                txBuffer.setPayloadSize(2);
+                txBuffer.getPayload()[0] = 0;
+                txBuffer.getPayload()[1] = 0;
+                bus.transmit(txBuffer);
             }
         }
         else
@@ -62,6 +70,12 @@ void PQ9CommandHandler::commandLoop()
             // invalid payload size
             // what should we do here?
             serial.println("Invalid Command, size must be > 1");
+            txBuffer.setDestination(rxBuffer.getSource());
+            txBuffer.setSource(bus.getAddress());
+            txBuffer.setPayloadSize(2);
+            txBuffer.getPayload()[0] = 0;
+            txBuffer.getPayload()[1] = 0;
+            bus.transmit(txBuffer);
         }
     }
 }

@@ -13,7 +13,8 @@ class TelemetryContainer
  protected:
 
  public:
-     virtual int size() = 0;
-     virtual unsigned char * getArray() = 0;
+    virtual ~TelemetryContainer( ) {};
+    virtual int size() = 0;
+    virtual unsigned char * getArray() = 0;
 };
 #endif /* TELEMETRYCONTAINER_H_ */

@@ -13,11 +13,23 @@
 #include "Service.h"
 #include "DSerial.h"
 
-#define RESET_SERVICE                     19
+#define RESET_SERVICE           19
+#define RESET_ERROR              0
+#define RESET_REQUEST            1
+#define RESET_RESPONSE           2
+
+#define RESET_SOFT               1
+#define RESET_HARD               2
+#define RESET_POWERCYCLE         3
 
 class ResetService: public Service
 {
+ protected:
+     unsigned long WDIPort;
+     unsigned long WDIPin;
+
  public:
+     ResetService( const unsigned long port, const unsigned long pin );
      virtual bool process( PQ9Frame &command, PQ9Bus &interface, PQ9Frame &workingBbuffer );
 
 };

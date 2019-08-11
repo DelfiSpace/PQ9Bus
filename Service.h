@@ -16,7 +16,8 @@ class Service
  protected:
 
  public:
-     virtual bool process(PQ9Frame &command, PQ9Bus &interface, PQ9Frame &workingBbuffer) = 0;
+    virtual ~Service( ) {};
+    virtual bool process(PQ9Frame &command, PQ9Bus &interface, PQ9Frame &workingBbuffer) = 0;
 };
 
 #endif /* SERVICE_H_ */

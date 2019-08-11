@@ -31,6 +31,9 @@ class ResetService: public Service
  public:
      ResetService( const unsigned long port, const unsigned long pin );
      virtual bool process( PQ9Frame &command, PQ9Bus &interface, PQ9Frame &workingBbuffer );
+     void init();
+     void kickHardwareWatchDog();
+     void kickSoftwareWatchDog();
 
 };
 #endif /* RESETSERVICE_H_ */

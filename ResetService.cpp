@@ -23,6 +23,18 @@ ResetService::ResetService(const unsigned long WDport, const unsigned long WDpin
     WDIPin = WDpin;
 }
 
+void ResetService::init()
+{
+    MAP_GPIO_setOutputLowOnPin( WDIPort, WDIPin );
+    MAP_GPIO_setAsOutputPin( WDIPort, WDIPin );
+}
+
+void ResetService::kickHardwareWatchDog()
+{
+    MAP_GPIO_setOutputHighOnPin( WDIPort, WDIPin );
+    MAP_GPIO_setOutputLowOnPin( WDIPort, WDIPin );
+}
+
 bool ResetService::process(PQ9Frame &command, PQ9Bus &interface, PQ9Frame &workingBuffer)
 {
     if (command.getPayload()[0] == RESET_SERVICE)
@@ -98,4 +110,3 @@ bool ResetService::process(PQ9Frame &command, PQ9Bus &interface, PQ9Frame &worki
         return false;
     }
 }
-

@@ -33,7 +33,7 @@ void PQ9CommandHandler::init()
     bus.setReceiveHandler(&onReceive);
 }
 
-void PQ9CommandHandler::commandLoop()
+bool PQ9CommandHandler::commandLoop()
 {
     if (dataReceived)
     {
@@ -63,6 +63,11 @@ void PQ9CommandHandler::commandLoop()
                 txBuffer.getPayload()[0] = 0;
                 txBuffer.getPayload()[1] = 0;
                 bus.transmit(txBuffer);
+                return false;
+            }
+            else
+            {
+                return true;
             }
         }
         else
@@ -76,6 +81,8 @@ void PQ9CommandHandler::commandLoop()
             txBuffer.getPayload()[0] = 0;
             txBuffer.getPayload()[1] = 0;
             bus.transmit(txBuffer);
+            return false;
         }
     }
+    return false;
 }

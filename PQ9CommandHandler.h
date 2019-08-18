@@ -26,7 +26,7 @@ class PQ9CommandHandler
  public:
      PQ9CommandHandler( PQ9Bus &bus, Service **servArray, int count );
      void init();
-     void commandLoop();
+     bool commandLoop();
 
 
 };

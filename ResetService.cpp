@@ -25,11 +25,22 @@ ResetService::ResetService(const unsigned long WDport, const unsigned long WDpin
 
 void ResetService::init()
 {
+    // init the internal watchdog
+    MAP_WDT_A_clearTimer();                                  // Clear the watchdog to prevent spurious triggers
+    MAP_WDT_A_initIntervalTimer( WDT_A_CLOCKSOURCE_SMCLK,    // set the watchdog to trigger every 178s
+                                 WDT_A_CLOCKITERATIONS_2G ); // (about 3 minutes)
+
+    // init external watchdog pins
     MAP_GPIO_setOutputLowOnPin( WDIPort, WDIPin );
     MAP_GPIO_setAsOutputPin( WDIPort, WDIPin );
 }
 
-void ResetService::kickHardwareWatchDog()
+void ResetService::kickInternalWatchDog()
+{
+    MAP_WDT_A_clearTimer();
+}
+
+void ResetService::kickExternalWatchDog()
 {
     MAP_GPIO_setOutputHighOnPin( WDIPort, WDIPin );
     MAP_GPIO_setOutputLowOnPin( WDIPort, WDIPin );
@@ -55,7 +66,7 @@ bool ResetService::process(PQ9Frame &command, PQ9Bus &interface, PQ9Frame &worki
                     // a response is sent before reset but not 2
                     interface.transmit(workingBuffer);
 
-                    //MAP_WDT_A_setPasswordViolationReset(WDT_A_HARD_RESET);
+                    // now reset the MCU
                     MAP_SysCtl_rebootDevice();
                     break;
 

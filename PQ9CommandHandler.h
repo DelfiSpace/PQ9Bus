@@ -20,7 +20,7 @@ class PQ9CommandHandler
  protected:
      PQ9Bus &bus;
      Service** services;
-     int servicesCount;
+     const int servicesCount;
 
 
  public:

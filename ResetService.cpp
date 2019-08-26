@@ -17,11 +17,8 @@
 
 extern DSerial serial;
 
-ResetService::ResetService(const unsigned long WDport, const unsigned long WDpin)
-{
-    WDIPort = WDport;
-    WDIPin = WDpin;
-}
+ResetService::ResetService(const unsigned long WDport, const unsigned long WDpin) :
+        WDIPort(WDport), WDIPin(WDpin) {}
 
 void ResetService::init()
 {

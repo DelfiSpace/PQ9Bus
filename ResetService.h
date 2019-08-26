@@ -25,8 +25,8 @@
 class ResetService: public Service
 {
  protected:
-     unsigned long WDIPort;
-     unsigned long WDIPin;
+     const unsigned long WDIPort;
+     const unsigned long WDIPin;
 
  public:
      ResetService( const unsigned long port, const unsigned long pin );

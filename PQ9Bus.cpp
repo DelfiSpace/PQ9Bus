@@ -131,7 +131,7 @@ PQ9Bus::PQ9Bus(uint8_t mod, unsigned long port, unsigned long pin)
     TXEnablePort = port;
     TXEnablePin = pin;
 
-	 switch (mod) 
+	switch (mod)
 	{	   
 		case 0:
 			this->module = EUSCI_A0_BASE;
@@ -161,7 +161,7 @@ PQ9Bus::~PQ9Bus()
 	MAP_UART_disableModule(this->module);
 	MAP_UART_unregisterInterrupt(this->module);
 	
-		/* Deregister from the moduleMap */
+		/* De-register from the moduleMap */
 	switch (module) 
 	{
 		case EUSCI_A0_BASE:

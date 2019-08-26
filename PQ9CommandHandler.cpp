@@ -22,11 +22,8 @@ void onReceive( PQ9Frame &newFrame )
     dataReceived = true;
 }
 
-PQ9CommandHandler::PQ9CommandHandler(PQ9Bus &interface, Service **servArray, int count): bus(interface)
-{
-    services = servArray;
-    servicesCount = count;
-}
+PQ9CommandHandler::PQ9CommandHandler(PQ9Bus &interface, Service **servArray, int count) :
+        bus(interface), services(servArray), servicesCount(count) {}
 
 void PQ9CommandHandler::init()
 {

@@ -11,7 +11,6 @@
 #include "PQ9Bus.h"
 #include "PQ9Frame.h"
 #include "Service.h"
-#include "DSerial.h"
 
 #define PING_SERVICE            17
 #define PING_ERROR               0
@@ -22,7 +21,6 @@ class PingService: public Service
 {
  public:
      virtual bool process( PQ9Frame &command, PQ9Bus &interface, PQ9Frame &workingBbuffer );
-
 };
 
 #endif /* PINGSERVICE_H_ */

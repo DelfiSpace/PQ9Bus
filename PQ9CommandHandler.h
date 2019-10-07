@@ -22,13 +22,10 @@ class PQ9CommandHandler
      Service** services;
      const int servicesCount;
 
-
  public:
      PQ9CommandHandler( PQ9Bus &bus, Service **servArray, int count );
-     void init();
-     bool commandLoop();
-
-
+     void received( PQ9Frame &newFrame );
+     bool handleCommands();
 };
 
 #endif /* PQ9COMMANDHANDLER_H_ */

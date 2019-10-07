@@ -16,21 +16,16 @@ extern DSerial serial;
 volatile bool dataReceived = false;
 PQ9Frame rxBuffer, txBuffer;
 
-void onReceive( PQ9Frame &newFrame )
+PQ9CommandHandler::PQ9CommandHandler(PQ9Bus &interface, Service **servArray, int count) :
+        bus(interface), services(servArray), servicesCount(count) {}
+
+void PQ9CommandHandler::received( PQ9Frame &newFrame )
 {
     newFrame.copy(rxBuffer);
     dataReceived = true;
 }
 
-PQ9CommandHandler::PQ9CommandHandler(PQ9Bus &interface, Service **servArray, int count) :
-        bus(interface), services(servArray), servicesCount(count) {}
-
-void PQ9CommandHandler::init()
-{
-    bus.setReceiveHandler(&onReceive);
-}
-
-bool PQ9CommandHandler::commandLoop()
+bool PQ9CommandHandler::handleCommands()
 {
     if (dataReceived)
     {

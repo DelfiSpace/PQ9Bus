@@ -6,14 +6,10 @@
  */
 #include "PingService.h"
 
-extern DSerial serial;
-
 bool PingService::process(PQ9Frame &command, PQ9Bus &interface, PQ9Frame &workingBuffer)
 {
     if (command.getPayload()[0] == PING_SERVICE)
     {
-        serial.println("PingService");
-
         // prepare response frame
         workingBuffer.setDestination(command.getSource());
         workingBuffer.setSource(interface.getAddress());

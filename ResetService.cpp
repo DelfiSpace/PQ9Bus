@@ -17,17 +17,31 @@
 
 extern DSerial serial;
 
+void resetHandler()
+{
+    serial.println("POWERCYCLE");
+}
+
 ResetService::ResetService(const unsigned long WDport, const unsigned long WDpin) :
         WDIPort(WDport), WDIPin(WDpin) {}
 
 void ResetService::init()
 {
-    // init the internal watchdog
-    MAP_WDT_A_clearTimer();                                  // Clear the watchdog to prevent spurious triggers
-    MAP_WDT_A_initIntervalTimer( WDT_A_CLOCKSOURCE_SMCLK,    // set the watchdog to trigger every 178s
+    // initialize the internal watch-dog
+    MAP_WDT_A_clearTimer();                                  // Clear the watch-dog to prevent spurious triggers
+    MAP_WDT_A_initIntervalTimer( WDT_A_CLOCKSOURCE_SMCLK,    // set the watch-dog to trigger every 178s
                                  WDT_A_CLOCKITERATIONS_2G ); // (about 3 minutes)
 
-    // init external watchdog pins
+    // select the interrupt handler
+    MAP_WDT_A_registerInterrupt(&resetHandler);
+}
+
+void ResetService::refreshConfiguration()
+{
+    // select the interrupt handler
+    MAP_WDT_A_registerInterrupt(&resetHandler);
+
+    // initialize external watch-dog pins
     MAP_GPIO_setOutputLowOnPin( WDIPort, WDIPin );
     MAP_GPIO_setAsOutputPin( WDIPort, WDIPin );
 }
@@ -50,11 +64,12 @@ bool ResetService::process(PQ9Frame &command, PQ9Bus &interface, PQ9Frame &worki
         // prepare response frame
         workingBuffer.setDestination(command.getSource());
         workingBuffer.setSource(interface.getAddress());
-        workingBuffer.setPayloadSize(2);
+        workingBuffer.setPayloadSize(3);
         workingBuffer.getPayload()[0] = RESET_SERVICE;
 
         if ((command.getPayloadSize() == 3) && (command.getPayload()[1] == RESET_REQUEST))
         {
+            workingBuffer.getPayload()[2] = command.getPayload()[2];
             switch(command.getPayload()[2])
             {
                 case RESET_SOFT:

@@ -19,7 +19,9 @@ extern DSerial serial;
 
 void resetHandler()
 {
-    serial.println("POWERCYCLE");
+    // TODO: replace this with a powercycle to protect also the RS485 driver
+    // for now, at least reset, till the power cycle gets implemented in HW
+    MAP_SysCtl_rebootDevice();
 }
 
 ResetService::ResetService(const unsigned long WDport, const unsigned long WDpin) :
@@ -34,12 +36,21 @@ void ResetService::init()
 
     // select the interrupt handler
     MAP_WDT_A_registerInterrupt(&resetHandler);
+
+    // start the timer
+    MAP_WDT_A_startTimer();
 }
 
 void ResetService::refreshConfiguration()
 {
     // select the interrupt handler
     MAP_WDT_A_registerInterrupt(&resetHandler);
+
+    // ensure the timer is running: this only forces the
+    // timer to run (in case it got disabled for any reason)
+    // but it does not reset it, making sure the watch-dog
+    // cannot be disabled by mistake
+    MAP_WDT_A_startTimer();
 
     // initialize external watch-dog pins
     MAP_GPIO_setOutputLowOnPin( WDIPort, WDIPin );
@@ -48,11 +59,13 @@ void ResetService::refreshConfiguration()
 
 void ResetService::kickInternalWatchDog()
 {
+    // reset the internal watch-dog timer
     MAP_WDT_A_clearTimer();
 }
 
 void ResetService::kickExternalWatchDog()
 {
+    // toggle the WDI pin of the external watch-dog
     MAP_GPIO_setOutputHighOnPin( WDIPort, WDIPin );
     MAP_GPIO_setOutputLowOnPin( WDIPort, WDIPin );
 }
@@ -88,7 +101,8 @@ bool ResetService::process(PQ9Frame &command, PQ9Bus &interface, PQ9Frame &worki
                     // a response is sent before reset but not 2
                     interface.transmit(workingBuffer);
 
-                    // toggle the WDI pin 3 times, just to be sure...
+                    // toggle the WDI pin 3 times, just to be sure
+                    // the external watch-dog resets...
                     MAP_GPIO_setOutputHighOnPin( WDIPort, WDIPin );
                     MAP_GPIO_setOutputLowOnPin( WDIPort, WDIPin );
                     MAP_GPIO_setOutputHighOnPin( WDIPort, WDIPin );

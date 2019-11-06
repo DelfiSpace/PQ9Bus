@@ -192,7 +192,7 @@ void PQ9Bus::begin(unsigned int baudrate, uint8_t address)
 
 	_initMain();	//UART pins init
 	
-    eUSCI_UART_Config Config;
+    eUSCI_UART_ConfigV1 Config;
 
     //Default Configuration, macro found in uart.h
     Config.selectClockSource	= EUSCI_A_UART_CLOCKSOURCE_SMCLK;

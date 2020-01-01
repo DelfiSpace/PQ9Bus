@@ -17,6 +17,7 @@
 #define PQ9Bus_H
 
 #include <driverlib.h>
+#include "PQ9Sender.h"
 #include "CRC16CCITT.h"
 #include "PQ9Frame.h"
 
@@ -25,7 +26,7 @@
 
 enum InternalState { WaitForAddress, Size, Source, PayloadByte, CRC };
 
-class PQ9Bus
+class PQ9Bus : public PQ9Sender
 {
 protected:
 	
@@ -68,9 +69,9 @@ public:
 	~PQ9Bus();
 	
 	void begin(unsigned int baudrate, uint8_t address);
-	void transmit( PQ9Frame &frame );
+	virtual void transmit( PQ9Frame &frame );
 	void setReceiveHandler( void (*islHandle)( PQ9Frame & ) );
-	uint8_t getAddress( void );
+	virtual uint8_t getAddress( void );
 };
 
 #endif	/* PQ9Bus_H_ */

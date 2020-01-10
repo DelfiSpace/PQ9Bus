@@ -207,11 +207,11 @@ void PQ9Bus::begin(unsigned int baudrate, uint8_t address)
 	{
 		Config.overSampling = EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION; // Oversampling
 		Config.clockPrescalar = n >> 4;										 // BRDIV = n / 16
-		Config.firstModReg = n - (Config.clockPrescalar << 4);			 // UCxBRF = int((n / 16) - int(n / 16)) * 16
+		Config.firstModReg = n - (Config.clockPrescalar << 4);			     // UCxBRF = int((n / 16) - int(n / 16)) * 16
 	}
 	else
 	{
-		Config.overSampling = EUSCI_A_UART_LOW_FREQUENCY_BAUDRATE_GENERATION; // Oversampling
+		Config.overSampling = EUSCI_A_UART_LOW_FREQUENCY_BAUDRATE_GENERATION; // Low-frequency mode
 		Config.clockPrescalar = n;											  // BRDIV = n
 		Config.firstModReg = 0;												  // UCxBRF not used
 	}
@@ -360,9 +360,6 @@ void PQ9Bus::_initMain( void )
 		break;		
 	}	
 	MAP_GPIO_setAsPeripheralModuleFunctionInputPin(modulePort, modulePins, GPIO_PRIMARY_MODULE_FUNCTION);
-
-	MAP_GPIO_setAsPeripheralModuleFunctionInputPin( TXEnablePort,
-                                        TXEnablePin, GPIO_PRIMARY_MODULE_FUNCTION );
 
     MAP_GPIO_setOutputLowOnPin( TXEnablePort, TXEnablePin );
 

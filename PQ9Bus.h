@@ -16,8 +16,8 @@
 #ifndef PQ9Bus_H
 #define PQ9Bus_H
 
+#include "DataBus.h"
 #include <driverlib.h>
-#include "PQ9Sender.h"
 #include "CRC16CCITT.h"
 #include "PQ9Frame.h"
 
@@ -26,7 +26,7 @@
 
 enum InternalState { WaitForAddress, Size, Source, PayloadByte, CRC };
 
-class PQ9Bus : public PQ9Sender
+class PQ9Bus : public DataBus
 {
 protected:
 	
@@ -46,10 +46,10 @@ private:
 	InternalState state;
     PQ9Frame rxFrame;
     unsigned char rxCRC1;
-	
+
 	/* Internal states */
 	void (*user_onReceive)( PQ9Frame & );
-	
+
 	void _initMain( void ); 
 	
 	/* stub functions to handle interrupts */

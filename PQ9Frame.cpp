@@ -46,7 +46,7 @@ unsigned char *PQ9Frame::getPayload()
     return &(buffer[3]);
 }
 
-void PQ9Frame::copy(PQ9Frame &destination)
+void PQ9Frame::copy(DataFrame &destination)
 {
     destination.setDestination(getDestination());
     destination.setSource(getSource());
@@ -55,4 +55,27 @@ void PQ9Frame::copy(PQ9Frame &destination)
     {
         destination.getPayload()[i] = getPayload()[i];
     }
+}
+
+void PQ9Frame::PrepareTransmit(){
+    crc.init();
+    crc.newChar(this->getDestination());
+    crc.newChar(this->getPayloadSize());
+    crc.newChar(this->getSource());
+    for (int i = 0; i < this->getPayloadSize(); i++)
+    {
+        crc.newChar(this->getPayload()[i]);
+    }
+    unsigned short computedCRC = crc.getCRC();
+    buffer[3 + this->getPayloadSize()] = (*((unsigned char*)  &(computedCRC)+1));
+    buffer[3 + this->getPayloadSize() + 1] = (*((unsigned char*)  &(computedCRC)+0));
+    this->frameSize = this->getPayloadSize() + 5;
+}
+
+unsigned int PQ9Frame::getFrameSize(){
+    return frameSize;
+}
+
+unsigned char* PQ9Frame::getFrame(){
+    return &buffer[0];
 }

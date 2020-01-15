@@ -48,7 +48,7 @@ private:
     unsigned char rxCRC1;
 
 	/* Internal states */
-	void (*user_onReceive)( PQ9Frame & );
+	void (*user_onReceive)( DataFrame & );
 
 	void _initMain( void ); 
 	
@@ -69,8 +69,8 @@ public:
 	~PQ9Bus();
 	
 	void begin(unsigned int baudrate, uint8_t address);
-	virtual void transmit( PQ9Frame &frame );
-	void setReceiveHandler( void (*islHandle)( PQ9Frame & ) );
+	void transmit( DataFrame &frame );
+	void setReceiveHandler( void (*islHandle)( DataFrame & ) );
 	virtual uint8_t getAddress( void );
 };
 

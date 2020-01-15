@@ -235,17 +235,23 @@ uint8_t PQ9Bus::getAddress()
  * uint8_t * TxBuffer: Transmit buffer pointer
  * uint8_t TxBufferSize: Size of Transmit buffer
 ****/
-void PQ9Bus::transmit( PQ9Frame &frame )
+void PQ9Bus::transmit( DataFrame &frame )
 {
+//    frame.PrepareTransmit();
+//
+//    for (int i = 0; i < frame.getFrameSize(); i++){
+//        MAP_UART_transmitData(this->module, frame.getFrame()[i]);
+//    }
+
     MAP_GPIO_setOutputHighOnPin( TXEnablePort, TXEnablePin );
 
 	crc.init();
 	MAP_UART_transmitAddress(this->module, frame.getDestination());
 	crc.newChar(frame.getDestination());
-	
+
 	MAP_UART_transmitData(this->module, frame.getPayloadSize());
 	crc.newChar(frame.getPayloadSize());
-	
+
 	MAP_UART_transmitData(this->module, frame.getSource());
 	crc.newChar(frame.getSource());
 
@@ -254,7 +260,7 @@ void PQ9Bus::transmit( PQ9Frame &frame )
 		MAP_UART_transmitData(this->module, frame.getPayload()[i]);
 		crc.newChar(frame.getPayload()[i]);
 	}
-	
+
 	unsigned short computedCRC = crc.getCRC();
 	MAP_UART_transmitData(this->module, (*((unsigned char*)  &(computedCRC)+1)) );
 	MAP_UART_transmitData(this->module, (*((unsigned char*)  &(computedCRC)+0)) );
@@ -271,7 +277,7 @@ void PQ9Bus::transmit( PQ9Frame &frame )
 }
 
 /**** RX Interrupt Handler ****/
-void PQ9Bus::setReceiveHandler( void (*islHandle)(PQ9Frame &) )
+void PQ9Bus::setReceiveHandler( void (*islHandle)(DataFrame &) )
 {
 	user_onReceive = islHandle;	//parse handler function
 	

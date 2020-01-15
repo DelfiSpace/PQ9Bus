@@ -12,11 +12,17 @@
 #ifndef PQ9FRAME_H_
 #define PQ9FRAME_H_
 
-class PQ9Frame
+#include "DataFrame.h"
+#include "CRC16CCITT.h"
+
+class PQ9Frame : public DataFrame
 
 {
  protected:
-     unsigned char buffer[258];
+     unsigned char buffer[260];
+     CRC16CCITT crc;
+
+     unsigned int frameSize;
 
  public:
      unsigned char getDestination();
@@ -26,7 +32,11 @@ class PQ9Frame
      unsigned char getPayloadSize();
      void setPayloadSize(unsigned char size);
      unsigned char *getPayload();
-     void copy(PQ9Frame &destination);
+     void copy(DataFrame &destination);
+
+     virtual void PrepareTransmit();
+     unsigned int getFrameSize();
+     virtual unsigned char *getFrame();
 };
 
 #endif /* PQ9FRAME_H_ */

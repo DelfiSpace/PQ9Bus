@@ -243,6 +243,12 @@ void PQ9Bus::transmit( DataFrame &frame )
 //        MAP_UART_transmitData(this->module, frame.getFrame()[i]);
 //    }
 
+    // introduce a small delay to make sure we avoid bus contention
+    uint32_t d1 = MAP_CS_getMCLK() * 2 / baudrate;
+    for(uint32_t k = 0; k < d1;  k++)
+    {
+        __asm("  nop");
+    }
     MAP_GPIO_setOutputHighOnPin( TXEnablePort, TXEnablePin );
 
 	crc.init();
@@ -266,7 +272,7 @@ void PQ9Bus::transmit( DataFrame &frame )
 	MAP_UART_transmitData(this->module, (*((unsigned char*)  &(computedCRC)+0)) );
 
 	// Workaround for USCI42 errata
-	// introduce a 2 bytes delay to make sure the UART buffer is flushed
+	// introduce a small delay to make sure the UART buffer is flushed
 	uint32_t d = MAP_CS_getMCLK() * 4 / this->baudrate;
 	for(uint32_t k = 0; k < d;  k++)
 	{

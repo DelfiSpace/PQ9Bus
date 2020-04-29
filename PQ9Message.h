@@ -38,7 +38,7 @@ class PQ9Message : public DataMessage
           this->setSize(2+size);
       };
       virtual unsigned int getPayloadSize(){
-          return this->getSize() + 2;
+          return this->getSize() - 2;
       };
 };
 
